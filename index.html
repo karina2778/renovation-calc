@@ -436,7 +436,469 @@ function calculate() {
 
   // Tips
   document.getElementById('tips-list').innerHTML = tipData.map(t => `<li>${t}</li>`).join('');
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>装修预算计算器 | 2026年最新装修费用估算</title>
+<meta name="description" content="免费在线装修预算计算器，输入面积自动估算装修费用。经济型/舒适型/品质型三档预算，水电、泥瓦、油漆、全屋定制逐项明细。">
+<style>
+:root {
+  --primary: #B45A28;
+  --primary-light: #F5E6D8;
+  --bg: #FDF8F4;
+  --card: #FFFFFF;
+  --text: #3D2C1E;
+  --text-light: #8B7355;
+  --border: #E8D5C4;
+  --green: #4A8C5C;
+  --orange: #D4883C;
+  --gold: #C8963E;
+  --shadow: 0 2px 16px rgba(60,30,10,0.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
 
+/* Header */
+.hero {
+  background: linear-gradient(135deg, #3D1F0A 0%, #6B3A1F 40%, #8B5A3C 100%);
+  color: #fff;
+  text-align: center;
+  padding: 40px 20px 50px;
+}
+.hero h1 { font-size: 32px; margin-bottom: 8px; letter-spacing: 2px; }
+.hero p { font-size: 16px; opacity: 0.85; }
+.hero .badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 20px;
+  padding: 4px 16px;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+/* Container */
+.container { max-width: 680px; margin: 0 auto; padding: 0 20px; }
+
+/* Calculator Card */
+.calc-card {
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 32px;
+  margin-top: -20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Form */
+.form-group { margin-bottom: 20px; }
+.form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.form-group .hint { font-size: 12px; color: var(--text-light); font-weight: 400; }
+
+.input-row { display: flex; gap: 12px; }
+.input-row > * { flex: 1; }
+
+input[type="number"] {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  background: #FEFCFA;
+  transition: border-color 0.2s;
+}
+input[type="number"]:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.radio-group { display: flex; gap: 8px; }
+.radio-group label {
+  flex: 1;
+  text-align: center;
+  padding: 10px 8px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  background: #FEFCFA;
+}
+.radio-group label:hover { border-color: var(--primary); background: var(--primary-light); }
+.radio-group input[type="radio"] { display: none; }
+.radio-group input[type="radio"]:checked + span {
+  color: var(--primary);
+}
+.radio-group label:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Result */
+.result-section { display: none; margin-top: 28px; padding-top: 24px; border-top: 2px dashed var(--border); }
+
+.total-card {
+  background: linear-gradient(135deg, #3D1F0A, #6B3A1F);
+  color: #fff;
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.total-card .label { font-size: 14px; opacity: 0.8; }
+.total-card .amount { font-size: 48px; font-weight: 800; letter-spacing: 1px; margin: 4px 0; }
+.total-card .per-sqm { font-size: 13px; opacity: 0.7; }
+
+.breakdown { margin-top: 16px; }
+.breakdown h3 { font-size: 17px; margin-bottom: 12px; color: var(--text); }
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #F5EDE5;
+}
+.breakdown-item:last-child { border-bottom: none; }
+.breakdown-item .icon { font-size: 24px; margin-right: 12px; width: 36px; text-align: center; }
+.breakdown-item .info { flex: 1; }
+.breakdown-item .name { font-weight: 600; font-size: 14px; }
+.breakdown-item .tip { font-size: 12px; color: var(--text-light); }
+.breakdown-item .cost { font-weight: 700; font-size: 16px; color: var(--primary); white-space: nowrap; }
+
+/* Bar chart */
+.bar-chart { margin-top: 16px; }
+.bar-row { display: flex; align-items: center; margin-bottom: 8px; }
+.bar-label { width: 80px; font-size: 12px; text-align: right; padding-right: 8px; color: var(--text-light); flex-shrink: 0; }
+.bar-track { flex: 1; height: 20px; background: #F5EDE5; border-radius: 10px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 10px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.bar-amount { width: 90px; font-size: 12px; font-weight: 600; padding-left: 8px; color: var(--text); flex-shrink: 0; }
+
+/* Tips */
+.tips {
+  background: #FFFBF5;
+  border: 1px solid #F0E0C8;
+  border-left: 4px solid var(--orange);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-top: 20px;
+}
+.tips h4 { font-size: 15px; margin-bottom: 8px; color: var(--primary); }
+.tips ul { padding-left: 18px; }
+.tips li { font-size: 13px; color: var(--text-light); margin-bottom: 4px; }
+
+/* CTA */
+.cta {
+  background: linear-gradient(135deg, #FFF8F0, #FFECD0);
+  border: 2px solid var(--gold);
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+  margin-top: 24px;
+}
+.cta h3 { font-size: 18px; color: var(--primary); margin-bottom: 6px; }
+.cta p { font-size: 14px; color: var(--text-light); margin-bottom: 14px; }
+.cta .btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 12px 32px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 12px rgba(180,90,40,0.35);
+}
+.cta .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(180,90,40,0.45); }
+
+/* Footer */
+.footer { text-align: center; padding: 32px 20px; font-size: 12px; color: var(--text-light); }
+.footer a { color: var(--primary); text-decoration: none; }
+
+/* Steps */
+.steps { margin-top: 40px; }
+.steps h3 { text-align: center; font-size: 20px; margin-bottom: 20px; }
+.step-row { display: flex; gap: 12px; }
+.step-card {
+  flex: 1;
+  text-align: center;
+  padding: 20px 12px;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.step-card .step-num {
+  width: 36px; height: 36px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.step-card h4 { font-size: 14px; margin-bottom: 4px; }
+.step-card p { font-size: 12px; color: var(--text-light); }
+
+@media (max-width: 500px) {
+  .hero h1 { font-size: 24px; }
+  .calc-card { padding: 20px; }
+  .total-card .amount { font-size: 36px; }
+  .step-row { flex-direction: column; }
+  .radio-group { flex-wrap: wrap; }
+  .radio-group label { min-width: calc(50% - 4px); flex: unset; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>🏠 装修预算计算器</h1>
+  <p>输入面积，一键估算装修费用</p>
+  <div class="badge">2026年最新市场价格 · 数据每月更新</div>
+</div>
+
+<div class="container">
+  <div class="calc-card">
+    <div class="form-group">
+      <label>📐 房屋面积 <span class="hint">（套内面积，单位：平方米）</span></label>
+      <input type="number" id="area" placeholder="请输入套内面积，如 100" min="30" max="500" value="100">
+    </div>
+
+    <div class="form-group">
+      <label>🎯 装修档次</label>
+      <div class="radio-group" id="grade-group">
+        <label>
+          <input type="radio" name="grade" value="budget" checked>
+          <span>💰 经济型</span>
+        </label>
+        <label>
+          <input type="radio" name="grade" value="comfort">
+          <span>⭐ 舒适型</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="result-section" id="result">
+      <div class="total-card">
+        <div class="label">预估总价（不含家电软装）</div>
+        <div class="amount" id="total-amount">--</div>
+        <div class="per-sqm" id="per-sqm"></div>
+      </div>
+
+      <div class="breakdown">
+        <h3>📊 各项费用明细</h3>
+        <div id="breakdown-list"></div>
+      </div>
+
+      <div class="bar-chart" id="bar-chart"></div>
+
+      <div class="tips">
+        <h4>💡 省钱小贴士</h4>
+        <ul id="tips-list"></ul>
+      </div>
+
+      <div class="cta">
+        <h3>📖 想要更详细的装修指南？</h3>
+        <p>《装修避坑宝典》涵盖15步全流程、合同避坑、验收清单，帮你少花冤枉钱</p>
+        <a href="https://m.tb.cn/h.8YFM40J?tk=snzMgJHF01i" class="btn" target="_blank">去闲鱼查看 →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <h3>📋 装修三步走</h3>
+    <div class="step-row">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h4>算预算</h4>
+        <p>用计算器了解大致花费</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h4>看宝典</h4>
+        <p>掌握15步全流程避坑要点</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h4>省大钱</h4>
+        <p>少踩一个坑省几千块</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>© 2026 装修避坑宝典 | 预算数据仅供参考，实际价格因地区、材料品牌、人工成本而异</p>
+  <p><a href="#">关于我们</a> · <a href="#">联系方式</a></p>
+</div>
+
+<script>
+// Price data (per sqm, 2026 market average)
+const prices = {
+  budget: {
+    water_electric: 85,
+    waterproof: 22,
+    tile_material: 80,
+    tile_labor: 55,
+    carpentry: 35,
+    paint: 55,
+    doors: 50,
+    floor: 65,
+    cabinets: 220,
+    kitchen_bath_ceiling: 28,
+    sanitary: 65,
+    switches_lights: 35,
+    total_per_sqm: 795
+  },
+  comfort: {
+    water_electric: 120,
+    waterproof: 32,
+    tile_material: 130,
+    tile_labor: 65,
+    carpentry: 65,
+    paint: 85,
+    doors: 80,
+    floor: 110,
+    cabinets: 380,
+    kitchen_bath_ceiling: 42,
+    sanitary: 105,
+    switches_lights: 55,
+    total_per_sqm: 1269
+  }
+};
+
+const tips = {
+  budget: [
+    '瓷砖去本地建材市场仓库买，比品牌店便宜 30%-50%',
+    '灯具在线上购买（搜"中山灯具"），线下看效果再下单',
+    '窗帘找本地窗帘城定做，价格比装修公司便宜一半',
+    '付款分 4 次：开工30%→水电验收30%→木工验收30%→竣工10%'
+  ],
+  comfort: [
+    '全屋定制指定板材品牌（如爱格/克诺斯邦），找加工厂加工，省 30%',
+    '木门选本地工厂定制，同样材质比品牌店便宜 40%',
+    '家电在618/双11囤货，延迟发货到装修结束',
+    '合同约定增项上限不超过总价5%，防止不断加钱'
+  ]
+};
+
+const breakdownItems = [
+  { key: 'water_electric', icon: '⚡', name: '水电改造', tip: '含开槽/布管/穿线/底盒/强弱电箱' },
+  { key: 'waterproof', icon: '🛡️', name: '防水施工', tip: '卫生间+阳台+厨房，含闭水试验' },
+  { key: 'tile_material', icon: '🧱', name: '瓷砖（材料）', tip: '含瓷砖+背胶+美缝剂+搬运费' },
+  { key: 'tile_labor', icon: '👷', name: '瓷砖（人工）', tip: '含铺贴+倒角+瓷砖胶+找平' },
+  { key: 'carpentry', icon: '🪵', name: '木工吊顶', tip: '含轻钢龙骨+石膏板+造型吊顶' },
+  { key: 'paint', icon: '🎨', name: '油漆墙面', tip: '含腻子+底漆+面漆+人工打磨' },
+  { key: 'doors', icon: '🚪', name: '室内门', tip: '含门扇+门套+合页+门锁+安装' },
+  { key: 'floor', icon: '🪵', name: '地板', tip: '含地板+防潮垫+踢脚线+安装' },
+  { key: 'cabinets', icon: '🗄️', name: '全屋定制柜', tip: '含橱柜+衣柜+书柜+五金+安装' },
+  { key: 'kitchen_bath_ceiling', icon: '🔧', name: '厨卫吊顶', tip: '含铝扣板+龙骨+LED灯+浴霸位' },
+  { key: 'sanitary', icon: '🚿', name: '卫浴洁具', tip: '含马桶+花洒+浴室柜+龙头+角阀' },
+  { key: 'switches_lights', icon: '💡', name: '开关灯具', tip: '含全屋开关插座+筒灯+主灯+安装' }
+];
+
+const barColors = [
+  '#B45A28', '#C4713B', '#D4883C', '#8B5A3C',
+  '#A0683A', '#6B4226', '#B45A28', '#C4813D',
+  '#D4924A', '#8B5E3C', '#A07040', '#6B4828'
+];
+
+function formatMoney(n) { return '¥' + (n/10000).toFixed(1) + ' 万'; }
+function formatMoneyShort(n) { return (n/10000).toFixed(1) + '万'; }
+
+function calculate() {
+  const area = parseFloat(document.getElementById('area').value) || 100;
+  const grade = document.querySelector('input[name="grade"]:checked').value;
+  const data = prices[grade];
+  const tipData = tips[grade];
+
+  // Show result section
+  document.getElementById('result').style.display = 'block';
+
+  // Total
+  const total = data.total_per_sqm * area;
+  document.getElementById('total-amount').textContent = formatMoney(total);
+  document.getElementById('per-sqm').textContent = '约 ' + formatMoneyShort(data.total_per_sqm * 10000) + '/㎡（套内面积）';
+
+  // Breakdown
+  let breakdownHTML = '';
+  let barHTML = '';
+  breakdownItems.forEach((item, i) => {
+    const cost = Math.round(data[item.key] * area);
+    breakdownHTML += `
+      <div class="breakdown-item">
+        <div class="icon">${item.icon}</div>
+        <div class="info">
+          <div class="name">${item.name}</div>
+          <div class="tip">${item.tip}</div>
+        </div>
+        <div class="cost">${formatMoney(cost)}</div>
+      </div>`;
+
+    const pct = (cost / total * 100);
+    barHTML += `
+      <div class="bar-row">
+        <div class="bar-label">${item.name}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${barColors[i]}"></div>
+        </div>
+        <div class="bar-amount">${formatMoneyShort(cost)} (${pct.toFixed(1)}%)</div>
+      </div>`;
+  });
+  document.getElementById('breakdown-list').innerHTML = breakdownHTML;
+  document.getElementById('bar-chart').innerHTML = barHTML;
+
+  // Bar chart animate
+  setTimeout(() => {
+    document.querySelectorAll('.bar-fill').forEach(bar => {
+      bar.style.width = bar.style.width; // trigger reflow for animation
+    });
+  }, 100);
+
+  // Tips
+  document.getElementById('tips-list').innerHTML = tipData.map(t => `<li>${t}</li>`).join('');
+
+  // Scroll to result
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Event listeners
+document.getElementById('area').addEventListener('input', calculate);
+document.querySelectorAll('input[name="grade"]').forEach(radio => {
+  radio.addEventListener('change', calculate);
+});
+
+// Set CTA link (update with actual Xianyu link later)
+document.getElementById('cta-btn').addEventListener('click', function(e) {
+  e.preventDefault();
+  document.getElementById('total-amount').scrollIntoView({ behavior: 'smooth' });
+  // Replace with actual link when ready
+  // window.open('https://your-xianyu-link', '_blank');
+});
+
+// Initial calculation
+calculate();
+</script>
+
+</body>
+</html>
   // Scroll to result
   document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
